@@ -7,29 +7,36 @@ const { v4: uuidv4 } = require('uuid');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../data/linentrack.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 
+// Data directory check aur creation
 const dataDir = path.dirname(DB_PATH);
-try {
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-} catch (e) {
-    console.warn('[DB] Directory warning (Expected on Vercel):', e.message);
+if (!fs.existsSync(dataDir)) {
+    try {
+        fs.mkdirSync(dataDir, { recursive: true });
+    } catch (e) {
+        console.error('[DB] Directory creation failed:', e.message);
+    }
 }
 
 let _sqlJsDb = null;
 let _saveTimer = null;
 
-// Persistence function: Vercel par yeh fail hoga isliye try-catch zaroori hai
+/**
+ * Persistence: Render par disk write kaam karta hai.
+ * Note: Agar Render par 'Persistent Disk' attach nahi hai, 
+ * toh restart par data purana ho jayega.
+ */
 function persist() {
   if (!_sqlJsDb) return;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => {
     try {
       const data = _sqlJsDb.export();
-      // Note: Vercel filesystem is Read-Only. Writing here will fail in production.
       fs.writeFileSync(DB_PATH, Buffer.from(data));
+      console.log('[DB] Auto-saved to disk');
     } catch(e) { 
-      console.warn('[DB] Persist skipped: Read-only filesystem detected (Vercel).'); 
+      console.error('[DB] Persist error:', e.message); 
     }
-  }, 300);
+  }, 1000); // 1 second delay for better performance
 }
 
 process.on('exit', () => {
@@ -37,6 +44,7 @@ process.on('exit', () => {
     try { fs.writeFileSync(DB_PATH, Buffer.from(_sqlJsDb.export())); } catch {}
   }
 });
+
 ['SIGINT','SIGTERM'].forEach(s => process.on(s, () => process.exit(0)));
 
 function toObj(stmt) {
@@ -111,18 +119,27 @@ const db = {
 };
 
 async function initDb() {
-  // CRITICAL FIX FOR VERCEL: Locate WASM file via CDN
+  /**
+   * FIX: Render/Node.js ke liye local WASM file path.
+   * require.resolve se hum sql.js ka main folder dhundte hain 
+   * aur dist/sql-wasm.wasm tak ka rasta banate hain.
+   */
+  const wasmPath = path.join(path.dirname(require.resolve('sql.js')), 'dist', 'sql-wasm.wasm');
+  
   const SQL = await initSqlJs({
-    locateFile: file => `https://sql.js.org/dist/${file}`
+    locateFile: file => {
+      if (file.endsWith('.wasm')) return wasmPath;
+      return file;
+    }
   });
 
   if (fs.existsSync(DB_PATH)) {
     const buf = fs.readFileSync(DB_PATH);
     _sqlJsDb = new SQL.Database(buf);
-    console.log(`[DB] Loaded: ${DB_PATH}`);
+    console.log(`[DB] Database loaded from: ${DB_PATH}`);
   } else {
     _sqlJsDb = new SQL.Database();
-    console.log(`[DB] Created new in-memory instance`);
+    console.log(`[DB] Initialized fresh in-memory database`);
   }
 
   _sqlJsDb.run('PRAGMA foreign_keys=ON');
@@ -131,7 +148,10 @@ async function initDb() {
       const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
       const stmts = schema.replace(/--[^\n]*/g, '').split(';')
         .map(s => s.trim()).filter(s => s.length > 0);
-      for (const s of stmts) { try { _sqlJsDb.run(s); } catch {} }
+      for (const s of stmts) { 
+          try { _sqlJsDb.run(s); } 
+          catch (e) { /* Table already exists error ignore karein */ } 
+      }
   }
 
   return db;
