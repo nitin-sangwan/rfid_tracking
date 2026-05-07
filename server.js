@@ -56,23 +56,22 @@ app.use((err, req, res, _next) => {
   });
 });
 
-// --- Database Initialization ---
-// Vercel serverless functions mein hum manually listen nahi karte, 
-// Vercel khud app instance ko handle karta hai.
+// --- Database Initialization & Server Start ---
 initDb()
   .then(() => {
     console.log('Database ready.');
     
-    // Sirf local development mein listen karein, Vercel par nahi.
-    if (process.env.NODE_ENV !== 'production') {
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`\n LinenTrack running → http://localhost:${PORT}\n`);
-      });
-    }
+    // Render/Railway par server ko hamesha listen karna chahiye
+    // 0.0.0.0 use karna zaroori hai taaki external traffic handle ho sake
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`\n 🚀 LinenTrack is LIVE on Render!`);
+      console.log(`🔗 Listening on port: ${PORT}\n`);
+    });
   })
   .catch(err => {
     console.error('DB init failed on startup:', err);
+    process.exit(1); 
   });
 
-// CRITICAL: Vercel ko batane ke liye ki yeh hamari Express app hai
+// Compatibility ke liye module export
 module.exports = app;
