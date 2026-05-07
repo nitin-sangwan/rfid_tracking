@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../data/linentrack.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 
-// Data directory check aur creation
+// Data directory setup
 const dataDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dataDir)) {
     try {
@@ -20,11 +20,7 @@ if (!fs.existsSync(dataDir)) {
 let _sqlJsDb = null;
 let _saveTimer = null;
 
-/**
- * Persistence: Render par disk write kaam karta hai.
- * Note: Agar Render par 'Persistent Disk' attach nahi hai, 
- * toh restart par data purana ho jayega.
- */
+// Database ko disk par save karne ke liye
 function persist() {
   if (!_sqlJsDb) return;
   clearTimeout(_saveTimer);
@@ -32,11 +28,11 @@ function persist() {
     try {
       const data = _sqlJsDb.export();
       fs.writeFileSync(DB_PATH, Buffer.from(data));
-      console.log('[DB] Auto-saved to disk');
+      console.log('[DB] Changes saved to disk');
     } catch(e) { 
       console.error('[DB] Persist error:', e.message); 
     }
-  }, 1000); // 1 second delay for better performance
+  }, 500); 
 }
 
 process.on('exit', () => {
@@ -120,12 +116,15 @@ const db = {
 
 async function initDb() {
   /**
-   * FIX: Render/Node.js ke liye local WASM file path.
-   * require.resolve se hum sql.js ka main folder dhundte hain 
-   * aur dist/sql-wasm.wasm tak ka rasta banate hain.
+   * FIX: Path correction to avoid double 'dist/dist'.
+   * require.resolve('sql.js') returns path to '.../sql.js/dist/sql-wasm.js'
+   * so its dirname is already the 'dist' folder.
    */
-  const wasmPath = path.join(path.dirname(require.resolve('sql.js')), 'dist', 'sql-wasm.wasm');
+  const sqljsDir = path.dirname(require.resolve('sql.js'));
+  const wasmPath = path.join(sqljsDir, 'sql-wasm.wasm');
   
+  console.log(`[DB] Loading WASM from: ${wasmPath}`);
+
   const SQL = await initSqlJs({
     locateFile: file => {
       if (file.endsWith('.wasm')) return wasmPath;
@@ -136,10 +135,10 @@ async function initDb() {
   if (fs.existsSync(DB_PATH)) {
     const buf = fs.readFileSync(DB_PATH);
     _sqlJsDb = new SQL.Database(buf);
-    console.log(`[DB] Database loaded from: ${DB_PATH}`);
+    console.log(`[DB] Database loaded: ${DB_PATH}`);
   } else {
     _sqlJsDb = new SQL.Database();
-    console.log(`[DB] Initialized fresh in-memory database`);
+    console.log(`[DB] Created fresh database`);
   }
 
   _sqlJsDb.run('PRAGMA foreign_keys=ON');
@@ -150,7 +149,7 @@ async function initDb() {
         .map(s => s.trim()).filter(s => s.length > 0);
       for (const s of stmts) { 
           try { _sqlJsDb.run(s); } 
-          catch (e) { /* Table already exists error ignore karein */ } 
+          catch (e) { /* Table exists - ignore */ } 
       }
   }
 
