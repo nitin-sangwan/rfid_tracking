@@ -1,3 +1,4 @@
+require('dotenv').config();
 const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
@@ -7,19 +8,27 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../data/linentra
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 
 const dataDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+try {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+} catch (e) {
+    console.warn('[DB] Directory warning (Expected on Vercel):', e.message);
+}
 
 let _sqlJsDb = null;
 let _saveTimer = null;
 
+// Persistence function: Vercel par yeh fail hoga isliye try-catch zaroori hai
 function persist() {
   if (!_sqlJsDb) return;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => {
     try {
       const data = _sqlJsDb.export();
+      // Note: Vercel filesystem is Read-Only. Writing here will fail in production.
       fs.writeFileSync(DB_PATH, Buffer.from(data));
-    } catch(e) { console.error('[DB] persist error:', e.message); }
+    } catch(e) { 
+      console.warn('[DB] Persist skipped: Read-only filesystem detected (Vercel).'); 
+    }
   }, 300);
 }
 
@@ -34,7 +43,6 @@ function toObj(stmt) {
   return stmt.getAsObject();
 }
 
-// Normalize params: handle (array), (a,b,c...) or no-args all as flat array
 function normalize(...args) {
   if (args.length === 0) return [];
   if (args.length === 1) {
@@ -43,7 +51,7 @@ function normalize(...args) {
     if (a === undefined || a === null) return [];
     return [a];
   }
-  return args; // spread args like .run(a, b, c)
+  return args;
 }
 
 function makeStmt(sql) {
@@ -79,15 +87,12 @@ function makeStmt(sql) {
 
 const db = {
   generateId: () => uuidv4(),
-
   exec(sql) {
     _sqlJsDb.run(sql);
     persist();
     return this;
   },
-
   prepare(sql) { return makeStmt(sql); },
-
   transaction(fn) {
     return (...args) => {
       _sqlJsDb.run('BEGIN');
@@ -102,12 +107,14 @@ const db = {
       }
     };
   },
-
   pragma(s) { try { _sqlJsDb.run(`PRAGMA ${s}`); } catch {} }
 };
 
 async function initDb() {
-  const SQL = await initSqlJs();
+  // CRITICAL FIX FOR VERCEL: Locate WASM file via CDN
+  const SQL = await initSqlJs({
+    locateFile: file => `https://sql.js.org/dist/${file}`
+  });
 
   if (fs.existsSync(DB_PATH)) {
     const buf = fs.readFileSync(DB_PATH);
@@ -115,15 +122,17 @@ async function initDb() {
     console.log(`[DB] Loaded: ${DB_PATH}`);
   } else {
     _sqlJsDb = new SQL.Database();
-    console.log(`[DB] Created: ${DB_PATH}`);
+    console.log(`[DB] Created new in-memory instance`);
   }
 
   _sqlJsDb.run('PRAGMA foreign_keys=ON');
 
-  const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
-  const stmts = schema.replace(/--[^\n]*/g, '').split(';')
-    .map(s => s.trim()).filter(s => s.length > 0);
-  for (const s of stmts) { try { _sqlJsDb.run(s); } catch {} }
+  if (fs.existsSync(SCHEMA_PATH)) {
+      const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
+      const stmts = schema.replace(/--[^\n]*/g, '').split(';')
+        .map(s => s.trim()).filter(s => s.length > 0);
+      for (const s of stmts) { try { _sqlJsDb.run(s); } catch {} }
+  }
 
   return db;
 }
