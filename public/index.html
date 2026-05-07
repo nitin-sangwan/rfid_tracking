@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinenTrack — RFID Linen Management</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f5f4f0;--bg3:#eeece8;
+  --tx:#1a1a18;--tx2:#6b6b68;--tx3:#a0a09c;
+  --bd:rgba(0,0,0,.10);--bd2:rgba(0,0,0,.17);
+  --r4:4px;--r6:6px;--r8:8px;--r12:12px;
+  --blue:#185fa5;--blue-bg:#e6f1fb;
+  --green:#3b6d11;--green-bg:#eaf3de;
+  --amber:#854f0b;--amber-bg:#faeeda;
+  --red:#a32d2d;--red-bg:#fcebeb;
+  --teal:#0f6e56;--teal-bg:#e1f5ee;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#282826;--bg3:#111110;
+  --tx:#f0ede8;--tx2:#a8a8a4;--tx3:#6a6a66;
+  --bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.15);
+  --blue:#7ab8f0;--blue-bg:#0c2a44;
+  --green:#8fc45a;--green-bg:#172904;
+  --amber:#f0b050;--amber-bg:#2e1a04;
+  --red:#f09090;--red-bg:#2e1010;
+  --teal:#4ecba4;--teal-bg:#052820;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;line-height:1.5}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-box{background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--r12);padding:32px;width:360px}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.login-logo-icon{width:36px;height:36px;background:var(--tx);color:var(--bg);border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:18px}
+.login-logo-text{font-size:18px;font-weight:700;letter-spacing:-.02em}
+.login-logo-sub{font-size:11px;color:var(--tx3)}
+.login-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--tx2);margin-bottom:20px}
+.login-field{margin-bottom:12px}
+.login-field label{display:block;font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.login-field input{width:100%;padding:9px 11px;border:0.5px solid var(--bd2);border-radius:var(--r8);background:var(--bg);color:var(--tx);font-size:13px;font-family:inherit;outline:none}
+.login-field input:focus{border-color:var(--tx)}
+.login-btn{width:100%;padding:9px;background:var(--tx);color:var(--bg);border:none;border-radius:var(--r8);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px}
+.login-btn:hover{opacity:.85}
+.login-hint{font-size:11px;color:var(--tx3);text-align:center;margin-top:14px}
+.login-error{background:var(--red-bg);color:var(--red);padding:8px 11px;border-radius:var(--r6);font-size:12px;margin-bottom:12px;display:none}
+
+/* APP */
+#app{display:flex;height:100vh;overflow:hidden;display:none}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--bg);border-right:.5px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
+.logo{padding:13px 15px;border-bottom:.5px solid var(--bd);display:flex;align-items:center;gap:8px}
+.logo-icon{width:28px;height:28px;background:var(--tx);color:var(--bg);border-radius:var(--r6);display:flex;align-items:center;justify-content:center;font-size:13px}
+.logo-text{font-size:13px;font-weight:700;letter-spacing:-.01em}
+.logo-sub{font-size:10px;color:var(--tx3)}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:4px 0}
+.nav-section{padding:2px 0}
+.nav-label{font-size:10px;font-weight:600;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;padding:8px 14px 3px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:12.5px;color:var(--tx2);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .1s,color .1s;position:relative}
+.nav-item:hover{background:var(--bg2);color:var(--tx)}
+.nav-item.active{background:var(--bg2);color:var(--tx);font-weight:500}
+.nav-item.active::before{content:'';position:absolute;left:0;top:5px;bottom:5px;width:2.5px;background:var(--tx);border-radius:0 2px 2px 0}
+.nav-item i{font-size:15px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red-bg);color:var(--red);font-size:10px;padding:1px 5px;border-radius:10px;font-weight:700}
+.sidebar-user{padding:10px 14px;border-top:.5px solid var(--bd);display:flex;align-items:center;gap:8px}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.user-name{font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:10px;color:var(--tx3)}
+.logout-btn{margin-left:auto;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:15px;display:flex}
+.logout-btn:hover{color:var(--red)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:var(--bg);border-bottom:.5px solid var(--bd);padding:9px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.page-title{font-size:14px;font-weight:600;white-space:nowrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hotel-select{font-size:12px;padding:5px 9px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--bg2);color:var(--tx);cursor:pointer;font-family:inherit}
+.content{flex:1;overflow-y:auto;padding:18px}
+.page{display:none}
+.page.active{display:block}
+
+/* COMPONENTS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px}
+.stat-card{background:var(--bg2);border-radius:var(--r8);padding:13px 15px}
+.stat-label{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.stat-value{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.stat-meta{font-size:11px;color:var(--tx3);margin-top:3px}
+.stat-meta.up{color:var(--green)}
+.stat-meta.dn{color:var(--red)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+
+.card{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--r12);padding:15px;margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;gap:8px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:600}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:7px 9px;font-size:10px;font-weight:600;color:var(--tx2);border-bottom:.5px solid var(--bd);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+td{padding:8px 9px;border-bottom:.5px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg2)}
+.loading-row td{text-align:center;color:var(--tx3);padding:24px}
+
+.pill{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;white-space:nowrap}
+.p-success{background:var(--green-bg);color:var(--green)}
+.p-warning{background:var(--amber-bg);color:var(--amber)}
+.p-danger{background:var(--red-bg);color:var(--red)}
+.p-info{background:var(--blue-bg);color:var(--blue)}
+.p-neutral{background:var(--bg2);color:var(--tx2)}
+.p-teal{background:var(--teal-bg);color:var(--teal)}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border:.5px solid var(--bd2);border-radius:var(--r8);font-size:12.5px;cursor:pointer;background:var(--bg);color:var(--tx);font-family:inherit;white-space:nowrap;transition:background .1s}
+.btn:hover{background:var(--bg2)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:4px 9px;font-size:11.5px}
+.btn-icon{padding:5px 7px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+.form-row{display:grid;gap:11px;margin-bottom:11px}
+.c2{grid-template-columns:1fr 1fr}
+.c3{grid-template-columns:1fr 1fr 1fr}
+.form-group label{display:block;font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:7px 10px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--bg);color:var(--tx);font-size:12.5px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--tx)}
+.form-group textarea{resize:vertical;min-height:68px}
+
+.search-bar{display:flex;align-items:center;gap:7px;padding:7px 11px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--bg2);margin-bottom:13px}
+.search-bar i{color:var(--tx3);font-size:15px;flex-shrink:0}
+.search-bar input{border:none;background:none;outline:none;font-size:12.5px;color:var(--tx);flex:1;font-family:inherit}
+
+.scan-zone{border:1.5px dashed var(--bd2);border-radius:var(--r12);padding:22px;text-align:center;margin-bottom:13px;background:var(--bg2)}
+.scan-zone i{font-size:32px;color:var(--tx3);display:block;margin-bottom:6px}
+.scan-zone .lbl{font-size:12.5px;color:var(--tx2)}
+.scan-zone .sub{font-size:11px;color:var(--tx3);margin-top:2px}
+
+.linen-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg);border:.5px solid var(--bd2);border-radius:var(--r4);font-size:11px;margin:2px;font-family:monospace}
+
+.alert-item{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:var(--r8);margin-bottom:7px}
+.alert-item i{font-size:15px;flex-shrink:0;margin-top:1px}
+.a-danger{background:var(--red-bg)}
+.a-danger i,.a-danger .at{color:var(--red)}
+.a-warning{background:var(--amber-bg)}
+.a-warning i,.a-warning .at{color:var(--amber)}
+.a-info{background:var(--blue-bg)}
+.a-info i,.a-info .at{color:var(--blue)}
+.at{font-size:12.5px;font-weight:500}
+.as{font-size:11px;color:var(--tx2);margin-top:1px}
+
+.timeline-item{display:flex;gap:9px;padding-bottom:12px;position:relative}
+.timeline-item:not(:last-child)::before{content:'';position:absolute;left:5px;top:13px;bottom:0;width:1px;background:var(--bd)}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px;border:1.5px solid}
+.tl-dot.done{background:var(--green-bg);border-color:var(--green)}
+.tl-dot.warn{background:var(--amber-bg);border-color:var(--amber)}
+.tl-dot.info{background:var(--blue-bg);border-color:var(--blue)}
+.tl-title{font-size:12px;font-weight:500}
+.tl-meta{font-size:10.5px;color:var(--tx3);margin-top:1px}
+
+.tabs{display:flex;border-bottom:.5px solid var(--bd);margin-bottom:14px}
+.tab-btn{padding:7px 14px;font-size:12.5px;cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;color:var(--tx2);font-family:inherit}
+.tab-btn:hover{color:var(--tx)}
+.tab-btn.active{border-bottom-color:var(--tx);color:var(--tx);font-weight:500}
+
+.progress-bar{height:4px;border-radius:3px;background:var(--bg2);overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:var(--blue)}
+
+.lc-bar{display:flex;gap:2px;margin-top:3px}
+.lc-seg{height:3px;flex:1;border-radius:2px;background:var(--bd)}
+.lc-seg.ok{background:var(--blue)}
+.lc-seg.warn{background:var(--amber)}
+.lc-seg.over{background:var(--red)}
+
+.boq-step{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r8);margin-bottom:7px;border:.5px solid var(--bd)}
+.step-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.step-done{background:var(--green-bg);color:var(--green)}
+.step-active{background:var(--tx);color:var(--bg)}
+.step-pending{background:var(--bg2);color:var(--tx3)}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:500;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--r12);border:.5px solid var(--bd);width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
+.modal-head{padding:13px 15px;border-bottom:.5px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1}
+.modal-title{font-size:13.5px;font-weight:600}
+.modal-body{padding:15px}
+.modal-foot{padding:11px 15px;border-top:.5px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
+
+#toast{position:fixed;bottom:22px;right:22px;background:var(--tx);color:var(--bg);padding:9px 15px;border-radius:var(--r8);font-size:12.5px;opacity:0;pointer-events:none;z-index:999;max-width:340px;transition:opacity .2s;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+#toast.show{opacity:1}
+
+code{font-family:'SF Mono','Fira Code',monospace;font-size:11px;background:var(--bg2);padding:1px 5px;border-radius:3px}
+.sep{height:.5px;background:var(--bd);margin:11px 0}
+.inforow{display:grid;grid-template-columns:120px 1fr;gap:3px;font-size:11.5px;padding:3px 0}
+.inforow .k{color:var(--tx2)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--tx3)}
+.empty-state i{font-size:32px;display:block;margin-bottom:8px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.grid2,.grid3{grid-template-columns:1fr}.form-row.c2,.form-row.c3{grid-template-columns:1fr}.sidebar{width:200px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon"><i class="ti ti-ripple"></i></div>
+      <div>
+        <div class="login-logo-text">LinenTrack</div>
+        <div class="login-logo-sub">RFID Management System</div>
+      </div>
+    </div>
+    <div class="login-title">Sign in to your account</div>
+    <div class="login-sub">Enter your credentials to continue</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-field"><label>Email Address</label><input type="email" id="login-email" placeholder="admin@linentrack.com" autocomplete="email"></div>
+    <div class="login-field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-hint">Demo: admin@linentrack.com / Admin@123</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-ripple"></i></div>
+    <div><div class="logo-text">LinenTrack</div><div class="logo-sub">RFID Management</div></div>
+  </div>
+  <div class="sidebar-scroll">
+    <div class="nav-section">
+      <div class="nav-label">Operations</div>
+      <button class="nav-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+      <button class="nav-item" onclick="nav('enrollment',this)"><i class="ti ti-tag"></i> Linen Enrollment</button>
+      <button class="nav-item" onclick="nav('dispatch',this)"><i class="ti ti-truck"></i> Dispatch</button>
+      <button class="nav-item" onclick="nav('returns',this)"><i class="ti ti-arrow-back"></i> Returns</button>
+      <button class="nav-item" onclick="nav('batches',this)"><i class="ti ti-stack"></i> Batches</button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Management</div>
+      <button class="nav-item" onclick="nav('inventory',this)"><i class="ti ti-package"></i> Inventory</button>
+      <button class="nav-item" onclick="nav('boq',this)"><i class="ti ti-file-invoice"></i> BOQ Billing</button>
+      <button class="nav-item" onclick="nav('reports',this)"><i class="ti ti-chart-bar"></i> Reports</button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Admin</div>
+      <button class="nav-item" onclick="nav('alerts',this)"><i class="ti ti-bell"></i> Alerts <span class="nav-badge" id="alert-badge">…</span></button>
+      <button class="nav-item" onclick="nav('search',this)"><i class="ti ti-search"></i> Search</button>
+      <button class="nav-item" onclick="nav('master',this)"><i class="ti ti-database"></i> Master Data</button>
+      <button class="nav-item" onclick="nav('users',this)"><i class="ti ti-users"></i> Users &amp; Roles</button>
+      <button class="nav-item" onclick="nav('support',this)"><i class="ti ti-help-circle"></i> Support</button>
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <div class="avatar" id="user-avatar">?</div>
+    <div><div class="user-name" id="user-name">Loading…</div><div class="user-role" id="user-role"></div></div>
+    <button class="logout-btn" onclick="doLogout()" title="Sign out"><i class="ti ti-logout"></i></button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <select class="hotel-select" id="hotel-filter" onchange="onHotelChange()"><option value="">All Hotels</option></select>
+      <button class="btn btn-sm" onclick="openModal('modal-scan')"><i class="ti ti-scan"></i> Quick Scan</button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="p-dashboard">
+      <div class="stats-grid" id="dash-stats">
+        <div class="stat-card"><div class="stat-label">Loading…</div><div class="stat-value">—</div></div>
+        <div class="stat-card"><div class="stat-label">Loading…</div><div class="stat-value">—</div></div>
+        <div class="stat-card"><div class="stat-label">Loading…</div><div class="stat-value">—</div></div>
+        <div class="stat-card"><div class="stat-label">Loading…</div><div class="stat-value">—</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Active Batches</span><button class="btn btn-sm" onclick="nav('batches')">View all</button></div>
+          <table><thead><tr><th>Batch</th><th>Items</th><th>Laundry</th><th>Status</th></tr></thead>
+          <tbody id="dash-batches"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Attention Required</span><span class="pill p-danger" id="dash-alert-count">…</span></div>
+          <div id="dash-alerts"><div class="empty-state"><i class="ti ti-bell"></i>Loading alerts…</div></div>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom:11px">Stock by Type</div>
+          <table><thead><tr><th>Type</th><th>Total</th><th>In-House</th></tr></thead>
+          <tbody id="dash-stock"><tr class="loading-row"><td colspan="3">Loading…</td></tr></tbody></table>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom:11px">Laundry Utilization</div>
+          <div id="dash-laundry"><div class="empty-state"><i class="ti ti-washing-machine"></i>Loading…</div></div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom:11px">Quick Stats</div>
+          <div id="dash-quickstats"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENROLLMENT -->
+    <div class="page" id="p-enrollment">
+      <div class="grid2">
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Enroll New Linen</span></div>
+            <div class="scan-zone">
+              <i class="ti ti-scan"></i>
+              <div class="lbl">Scan RFID tag with handheld device</div>
+              <div class="sub">or enter manually below</div>
+              <input type="text" id="enroll-rfid" placeholder="RFID Tag (e.g. RF:A4:2C:01)" style="margin-top:11px;padding:7px 11px;border:.5px solid var(--bd2);border-radius:var(--r8);font-size:12.5px;width:240px;background:var(--bg);color:var(--tx);font-family:monospace;outline:none">
+            </div>
+            <div class="form-row c2">
+              <div class="form-group"><label>Linen Type</label><select id="enroll-type"><option value="">Select type…</option></select></div>
+              <div class="form-group"><label>Hotel</label><select id="enroll-hotel"><option value="">Select hotel…</option></select></div>
+            </div>
+            <div class="form-row c3">
+              <div class="form-group"><label>Brand</label><input type="text" id="enroll-brand" placeholder="e.g. WelspunTex"></div>
+              <div class="form-group"><label>GSM</label><input type="text" id="enroll-gsm" placeholder="300gsm"></div>
+              <div class="form-group"><label>Purchase Date</label><input type="date" id="enroll-date"></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="doEnroll()"><i class="ti ti-plus"></i> Enroll Linen</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Recently Enrolled</span><span class="pill p-info" id="enroll-today-count">Today: —</span></div>
+            <table><thead><tr><th>Code</th><th>Type</th><th>RFID</th><th>Time</th></tr></thead>
+            <tbody id="enroll-recent"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:10px">Lifecycle Limits</div>
+            <table><thead><tr><th>Type</th><th>Max</th><th>Warning</th><th>At Limit</th></tr></thead>
+            <tbody id="enroll-limits"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISPATCH -->
+    <div class="page" id="p-dispatch">
+      <div class="grid2">
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Create Dispatch Batch</span></div>
+            <div class="form-row c2">
+              <div class="form-group"><label>Hotel</label><select id="disp-hotel"><option value="">Select hotel…</option></select></div>
+              <div class="form-group"><label>Laundry Provider</label><select id="disp-provider"><option value="">Select provider…</option></select></div>
+            </div>
+            <div class="form-row c2">
+              <div class="form-group"><label>Return SLA (hours)</label><input type="number" id="disp-sla" value="24" min="1"></div>
+              <div class="form-group"><label>Notes</label><input type="text" id="disp-notes" placeholder="Special instructions…"></div>
+            </div>
+            <div class="scan-zone" style="padding:18px">
+              <i class="ti ti-scan" style="font-size:26px"></i>
+              <div class="lbl">Scan items to add to batch</div>
+              <div style="margin-top:9px;min-height:32px" id="disp-tags"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:11px">
+              <input type="text" id="disp-scan-input" placeholder="Scan or enter RFID / Linen Code…" style="flex:1;padding:7px 10px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--bg);color:var(--tx);font-size:12.5px;font-family:monospace;outline:none" onkeydown="if(event.key==='Enter')addDispatchItem()">
+              <button class="btn btn-sm" onclick="addDispatchItem()"><i class="ti ti-plus"></i> Add</button>
+              <button class="btn btn-sm" onclick="clearDispatch()"><i class="ti ti-trash"></i></button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--bg2);border-radius:var(--r8);margin-bottom:11px">
+              <span style="font-size:12.5px;color:var(--tx2)">Items queued</span>
+              <span style="font-size:18px;font-weight:700" id="disp-count">0</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="createBatch()"><i class="ti ti-send"></i> Finalize &amp; Dispatch</button>
+              <button class="btn" onclick="openQR()"><i class="ti ti-qrcode"></i> Preview QR</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Dispatch History</span></div>
+          <table><thead><tr><th>Batch</th><th>Date</th><th>Items</th><th>Laundry</th><th>Status</th><th></th></tr></thead>
+          <tbody id="dispatch-history"><tr class="loading-row"><td colspan="6">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RETURNS -->
+    <div class="page" id="p-returns">
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Process Return</span></div>
+          <div class="form-row c2">
+            <div class="form-group"><label>Select Batch</label><select id="ret-batch"><option value="">Select batch…</option></select></div>
+            <div class="form-group"><label>Return Type</label><select id="ret-type"><option value="good">Normal Return</option><option value="rewash">Rewash Return</option></select></div>
+          </div>
+          <div class="scan-zone" style="padding:18px">
+            <i class="ti ti-scan" style="font-size:26px"></i>
+            <div class="lbl">Scan returned items</div>
+            <div style="margin-top:9px;min-height:32px" id="ret-tags"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:11px">
+            <input type="text" id="ret-scan-input" placeholder="Scan or enter Linen Code / RFID…" style="flex:1;padding:7px 10px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--bg);color:var(--tx);font-size:12.5px;font-family:monospace;outline:none" onkeydown="if(event.key==='Enter')addReturnItem()">
+            <button class="btn btn-sm" onclick="addReturnItem()"><i class="ti ti-plus"></i> Add</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:11px;background:var(--bg2);border-radius:var(--r8);text-align:center;margin-bottom:11px">
+            <div><div style="font-size:20px;font-weight:700" id="ret-expected">—</div><div style="font-size:10px;color:var(--tx2)">Expected</div></div>
+            <div><div style="font-size:20px;font-weight:700;color:var(--green)" id="ret-scanned">0</div><div style="font-size:10px;color:var(--tx2)">Scanned</div></div>
+            <div><div style="font-size:20px;font-weight:700;color:var(--red)" id="ret-pending">—</div><div style="font-size:10px;color:var(--tx2)">Pending</div></div>
+          </div>
+          <button class="btn btn-primary" onclick="submitReturn()"><i class="ti ti-check"></i> Confirm Return</button>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Return History</span></div>
+            <table><thead><tr><th>Batch</th><th>Returned</th><th>Missing</th><th>Date</th></tr></thead>
+            <tbody id="return-history"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATCHES -->
+    <div class="page" id="p-batches">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Batches</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select class="hotel-select" id="batch-status-filter" onchange="loadBatches()">
+              <option value="">All Statuses</option><option value="dispatched">Dispatched</option>
+              <option value="at_laundry">At Laundry</option><option value="in_transit">In Transit</option>
+              <option value="returned">Returned</option><option value="overdue">Overdue</option>
+              <option value="partially_returned">Partial Return</option>
+            </select>
+          </div>
+        </div>
+        <div class="search-bar"><i class="ti ti-search"></i><input type="text" id="batch-search" placeholder="Search batch code…" oninput="loadBatches()"></div>
+        <table>
+          <thead><tr><th>Batch</th><th>Hotel</th><th>Laundry</th><th>Dispatched</th><th>Expected</th><th>Items</th><th>Returned</th><th>Missing</th><th>Status</th><th></th></tr></thead>
+          <tbody id="batches-table"><tr class="loading-row"><td colspan="10">Loading…</td></tr></tbody>
+        </table>
+        <div id="batches-pagination" style="padding:10px 0;display:flex;gap:8px;justify-content:flex-end"></div>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div class="page" id="p-inventory">
+      <div class="stats-grid" id="inv-stats">
+        <div class="stat-card"><div class="stat-label">In-House</div><div class="stat-value" id="inv-inhouse">—</div></div>
+        <div class="stat-card"><div class="stat-label">At Laundry</div><div class="stat-value" id="inv-atlaundry">—</div></div>
+        <div class="stat-card"><div class="stat-label">Near Limit</div><div class="stat-value" id="inv-nearlimit" style="color:var(--amber)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Retired</div><div class="stat-value" id="inv-retired" style="color:var(--tx2)">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Linen Inventory</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select class="hotel-select" id="inv-type-filter" onchange="loadInventory()"><option value="">All Types</option></select>
+            <select class="hotel-select" id="inv-status-filter" onchange="loadInventory()">
+              <option value="">All Status</option><option value="in_house">In-House</option>
+              <option value="at_laundry">At Laundry</option><option value="missing">Missing</option><option value="retired">Retired</option>
+            </select>
+          </div>
+        </div>
+        <div class="search-bar"><i class="ti ti-search"></i><input type="text" id="inv-search" placeholder="Search RFID, Linen Code…" oninput="loadInventory()"></div>
+        <table>
+          <thead><tr><th>Code</th><th>RFID</th><th>Type</th><th>Washes</th><th>Lifecycle</th><th>Hotel</th><th>Status</th><th></th></tr></thead>
+          <tbody id="inventory-table"><tr class="loading-row"><td colspan="8">Loading…</td></tr></tbody>
+        </table>
+        <div id="inv-pagination" style="padding:10px 0;display:flex;gap:8px;justify-content:flex-end"></div>
+      </div>
+    </div>
+
+    <!-- BOQ -->
+    <div class="page" id="p-boq">
+      <div class="grid2">
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Generate BOQ</span></div>
+            <div class="form-row c3">
+              <div class="form-group"><label>Hotel</label><select id="boq-hotel"><option value="">Select…</option></select></div>
+              <div class="form-group"><label>Month</label>
+                <select id="boq-month">
+                  <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+                  <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+                  <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+                  <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Year</label><input type="number" id="boq-year" value="2025" min="2020" max="2099"></div>
+            </div>
+            <button class="btn btn-primary" onclick="generateBOQ()"><i class="ti ti-refresh"></i> Generate Draft</button>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:11px">Billing History</div>
+            <table><thead><tr><th>Period</th><th>Hotel</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody id="boq-history"><tr class="loading-row"><td colspan="5">Loading…</td></tr></tbody></table>
+          </div>
+        </div>
+        <div class="card" id="boq-detail-card">
+          <div class="card-header"><span class="card-title" id="boq-detail-title">Select or generate a BOQ</span></div>
+          <div id="boq-detail-body"><div class="empty-state"><i class="ti ti-file-invoice"></i>Select a BOQ from the history to view details</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="p-reports">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(this,'rpt-stock')">Stock Status</button>
+        <button class="tab-btn" onclick="switchTab(this,'rpt-laundry')">Laundry Inventory</button>
+        <button class="tab-btn" onclick="switchTab(this,'rpt-turnaround')">Turnaround</button>
+      </div>
+      <div id="rpt-stock">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Stock by Hotel &amp; Type</span></div>
+          <table><thead><tr><th>Hotel</th><th>Type</th><th>Total</th><th>In-House</th><th>At Laundry</th><th>Retired</th></tr></thead>
+          <tbody id="rpt-stock-table"><tr class="loading-row"><td colspan="6">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+      <div id="rpt-laundry" style="display:none">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Laundry Provider Inventory</span></div>
+          <table><thead><tr><th>Provider</th><th>Active Batches</th><th>Items at Laundry</th><th>Status</th></tr></thead>
+          <tbody id="rpt-laundry-table"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+      <div id="rpt-turnaround" style="display:none">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Turnaround Performance by Provider</span></div>
+          <table><thead><tr><th>Provider</th><th>Total Batches</th><th>Avg Hours</th><th>On-Time %</th><th>Overdue</th></tr></thead>
+          <tbody id="rpt-turnaround-table"><tr class="loading-row"><td colspan="5">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="page" id="p-alerts">
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Active Alerts</span><span class="pill p-danger" id="alerts-count">…</span></div>
+          <div id="alerts-list"><div class="empty-state"><i class="ti ti-bell"></i>Loading alerts…</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:11px">Alert Configuration</div>
+          <table>
+            <thead><tr><th>Alert Type</th><th>Threshold</th><th>Active</th></tr></thead>
+            <tbody>
+              <tr><td>Missing linen</td><td>48 hours</td><td><span class="pill p-success">On</span></td></tr>
+              <tr><td>Overdue return</td><td>6 hrs past ETA</td><td><span class="pill p-success">On</span></td></tr>
+              <tr><td>Lifecycle warning</td><td>90% wash limit</td><td><span class="pill p-success">On</span></td></tr>
+              <tr><td>BOQ ready</td><td>Month end</td><td><span class="pill p-success">On</span></td></tr>
+              <tr><td>Partial return</td><td>Any shortage</td><td><span class="pill p-neutral">Off</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="page" id="p-search">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Universal Search</span></div>
+        <div style="display:flex;gap:8px;margin-bottom:15px">
+          <div style="flex:1;display:flex;align-items:center;gap:8px;padding:8px 11px;border:.5px solid var(--bd2);border-radius:var(--r8);background:var(--bg2)">
+            <i class="ti ti-search" style="color:var(--tx3)"></i>
+            <input type="text" id="search-input" placeholder="Enter RFID tag or Linen Code (LN-XXXX)…" style="border:none;background:none;outline:none;font-size:12.5px;flex:1;color:var(--tx);font-family:monospace" onkeydown="if(event.key==='Enter')doSearch()">
+          </div>
+          <button class="btn btn-primary" onclick="doSearch()"><i class="ti ti-search"></i> Search</button>
+        </div>
+        <div id="search-result"><div class="empty-state"><i class="ti ti-tag"></i>Enter an RFID tag or linen code to trace a linen's full history</div></div>
+      </div>
+    </div>
+
+    <!-- MASTER DATA -->
+    <div class="page" id="p-master">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(this,'md-types');loadLinenTypes()">Linen Types</button>
+        <button class="tab-btn" onclick="switchTab(this,'md-laundry');loadProviders()">Laundry Providers</button>
+        <button class="tab-btn" onclick="switchTab(this,'md-hotels');loadHotels()">Hotels</button>
+      </div>
+      <div id="md-types">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Linen Types &amp; Lifecycle Limits</span>
+            <button class="btn btn-sm btn-primary" onclick="openModal('modal-add-type')"><i class="ti ti-plus"></i> Add Type</button>
+          </div>
+          <table><thead><tr><th>Name</th><th>Category</th><th>Max Washes</th><th>Warning at</th><th>At Limit</th><th>Rate (₹/wash)</th><th></th></tr></thead>
+          <tbody id="types-table"><tr class="loading-row"><td colspan="7">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+      <div id="md-laundry" style="display:none">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Laundry Providers</span>
+            <button class="btn btn-sm btn-primary" onclick="openModal('modal-add-provider')"><i class="ti ti-plus"></i> Add Provider</button>
+          </div>
+          <table><thead><tr><th>Name</th><th>Contact</th><th>SLA (hrs)</th><th>Current Items</th><th>Status</th></tr></thead>
+          <tbody id="providers-table"><tr class="loading-row"><td colspan="5">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+      <div id="md-hotels" style="display:none">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Hotels</span>
+            <button class="btn btn-sm btn-primary" onclick="openModal('modal-add-hotel')"><i class="ti ti-plus"></i> Add Hotel</button>
+          </div>
+          <table><thead><tr><th>Name</th><th>City</th><th>Rooms</th><th>Enrolled Linens</th><th>Status</th></tr></thead>
+          <tbody id="hotels-table"><tr class="loading-row"><td colspan="5">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="p-users">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Users &amp; Roles</span>
+          <button class="btn btn-sm btn-primary" onclick="openModal('modal-add-user')"><i class="ti ti-plus"></i> Add User</button>
+        </div>
+        <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Hotel</th><th>Last Login</th><th>Status</th><th></th></tr></thead>
+        <tbody id="users-table"><tr class="loading-row"><td colspan="7">Loading…</td></tr></tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:11px">Role Permissions</div>
+        <table>
+          <thead><tr><th>Permission</th><th>Platform Admin</th><th>Hotel Admin</th><th>Hotel Manager</th><th>Staff</th></tr></thead>
+          <tbody>
+            <tr><td>Enroll Linen</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Dispatch &amp; Returns</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Approve BOQ</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+            <tr><td>User Management</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+            <tr><td>Master Data</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>Multi-Hotel View</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SUPPORT -->
+    <div class="page" id="p-support">
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Raise Support Ticket</span></div>
+          <div class="form-row c2">
+            <div class="form-group"><label>Issue Type</label>
+              <select id="ticket-type">
+                <option>Missing Linen</option><option>RFID Tag Issue</option><option>Batch Discrepancy</option>
+                <option>Billing Issue</option><option>System Issue</option><option>Other</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Priority</label>
+              <select id="ticket-priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:11px"><label>Description</label><textarea id="ticket-desc" placeholder="Describe the issue in detail…"></textarea></div>
+          <button class="btn btn-primary" onclick="submitTicket()"><i class="ti ti-send"></i> Submit Ticket</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Open Tickets</span></div>
+          <table><thead><tr><th>Ticket</th><th>Type</th><th>Priority</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="tickets-table"><tr class="loading-row"><td colspan="5">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODALS -->
+<div class="overlay" id="modal-scan">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Quick RFID Scan</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-scan')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="scan-zone">
+        <i class="ti ti-scan"></i>
+        <div class="lbl">Scan or enter tag manually</div>
+        <input type="text" id="quick-scan-input" placeholder="RFID Tag or Linen Code…" style="margin-top:11px;padding:7px 11px;border:.5px solid var(--bd2);border-radius:var(--r8);font-size:12.5px;width:240px;background:var(--bg);color:var(--tx);font-family:monospace;outline:none">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-scan')">Cancel</button>
+      <button class="btn btn-primary" onclick="quickSearch()"><i class="ti ti-search"></i> Identify</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-batch-detail">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="batch-detail-title">Batch Detail</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-batch-detail')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body" id="batch-detail-body"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-batch-detail')">Close</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-linen-history">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="linen-hist-title">Linen History</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-linen-history')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body" id="linen-hist-body"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-linen-history')">Close</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-add-type">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Add Linen Type</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-add-type')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-row c2">
+        <div class="form-group"><label>Name</label><input type="text" id="at-name" placeholder="e.g. Bath Towel"></div>
+        <div class="form-group"><label>Category</label><select id="at-cat"><option>Bedding</option><option>Bathroom</option><option>Other</option></select></div>
+      </div>
+      <div class="form-row c3">
+        <div class="form-group"><label>Max Washes</label><input type="number" id="at-max" value="100"></div>
+        <div class="form-group"><label>Warning (%)</label><input type="number" id="at-warn" value="90"></div>
+        <div class="form-group"><label>Rate (₹/wash)</label><input type="number" id="at-rate" step="0.5" value="8"></div>
+      </div>
+      <div class="form-group"><label>At Limit Action</label><select id="at-action"><option value="flag">Flag for Review</option><option value="retire">Auto Retire</option></select></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-add-type')">Cancel</button><button class="btn btn-primary" onclick="saveLinenType()"><i class="ti ti-check"></i> Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-add-provider">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Add Laundry Provider</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-add-provider')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-row c2">
+        <div class="form-group"><label>Name</label><input type="text" id="ap-name" placeholder="Provider name"></div>
+        <div class="form-group"><label>Contact</label><input type="text" id="ap-contact" placeholder="+91-9800000000"></div>
+      </div>
+      <div class="form-group"><label>SLA (hours)</label><input type="number" id="ap-sla" value="24"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-add-provider')">Cancel</button><button class="btn btn-primary" onclick="saveProvider()"><i class="ti ti-check"></i> Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-add-hotel">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Add Hotel</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-add-hotel')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-row c2">
+        <div class="form-group"><label>Name</label><input type="text" id="ah-name" placeholder="Hotel name"></div>
+        <div class="form-group"><label>City</label><input type="text" id="ah-city" placeholder="City"></div>
+      </div>
+      <div class="form-group"><label>Rooms</label><input type="number" id="ah-rooms" value="50"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-add-hotel')">Cancel</button><button class="btn btn-primary" onclick="saveHotel()"><i class="ti ti-check"></i> Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-add-user">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Add User</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-add-user')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-row c2">
+        <div class="form-group"><label>Full Name</label><input type="text" id="au-name"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="au-email"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="form-group"><label>Password</label><input type="password" id="au-pass" placeholder="Min 8 chars"></div>
+        <div class="form-group"><label>Role</label>
+          <select id="au-role">
+            <option value="staff">Staff</option><option value="hotel_manager">Hotel Manager</option>
+            <option value="hotel_admin">Hotel Admin</option><option value="platform_admin">Platform Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Hotel</label><select id="au-hotel"><option value="">— Platform level —</option></select></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-add-user')">Cancel</button><button class="btn btn-primary" onclick="saveUser()"><i class="ti ti-check"></i> Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-qr">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="qr-batch-code">QR Code</div><button class="btn btn-sm btn-icon" onclick="closeModal('modal-qr')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body" style="text-align:center;padding:24px">
+      <div style="font-size:72px;line-height:1.1;font-family:monospace;color:var(--tx2)">▄▄▄▄▄<br>█ ▄ █<br>▀▀▀▀▀</div>
+      <div id="qr-info" style="margin-top:14px;font-size:12.5px;color:var(--tx2)"></div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:10px">Laundry pickup scans this QR to acknowledge receipt</div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modal-qr')">Close</button><button class="btn btn-primary" onclick="window.print()"><i class="ti ti-printer"></i> Print</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// API LAYER
+// ═══════════════════════════════════════════
+const API = '/api';
+let _token = localStorage.getItem('lt_token') || '';
+let _user = null;
+let _hotels = [];
+let _types = [];
+let _providers = [];
+let _dispatchItems = [];
+let _returnItems = [];
+let _lastBatchId = null;
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_token}` } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const data = await api('POST', '/auth/login', { email, password: pass });
+    _token = data.token;
+    _user = data.user;
+    localStorage.setItem('lt_token', _token);
+    showApp();
+  } catch(e) {
+    errEl.textContent = e.message; errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Sign In';
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  localStorage.removeItem('lt_token');
+  _token = ''; _user = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function showApp() {
+  try {
+    _user = await api('GET', '/auth/me');
+  } catch { doLogout(); return; }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('user-name').textContent = _user.name;
+  document.getElementById('user-role').textContent = _user.role.replace(/_/g,' ');
+  document.getElementById('user-avatar').textContent = _user.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+  await loadMasterData();
+  loadDashboard();
+  loadAlertBadge();
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const pageTitles = {
+  dashboard:'Dashboard', enrollment:'Linen Enrollment', dispatch:'Dispatch',
+  returns:'Returns', batches:'Batches', inventory:'Inventory', boq:'BOQ Billing',
+  reports:'Reports', alerts:'Alerts', search:'Search', master:'Master Data',
+  users:'Users & Roles', support:'Support'
+};
+
+function nav(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('p-'+id)?.classList.add('active');
+  if(btn) btn.classList.add('active');
+  else document.querySelector(`.nav-item[onclick*="'${id}'"]`)?.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[id] || id;
+  document.getElementById('content').scrollTop = 0;
+  const loaders = {
+    dashboard: loadDashboard, enrollment: loadEnrollPage,
+    dispatch: loadDispatchPage, batches: loadBatches,
+    inventory: loadInventory, boq: loadBOQPage,
+    reports: loadReports, alerts: loadAlerts,
+    users: loadUsers, support: loadSupport,
+    master: loadLinenTypes, returns: loadReturnsPage
+  };
+  loaders[id]?.();
+}
+
+function switchTab(btn, targetId) {
+  const prefix = targetId.split('-').slice(0,2).join('-');
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const scope = btn.closest('.page') || document;
+  scope.querySelectorAll(`[id^="${prefix}"]`).forEach(el => el.style.display='none');
+  const target = document.getElementById(targetId);
+  if(target) target.style.display='block';
+}
+
+// ═══════════════════════════════════════════
+// MASTER DATA CACHE
+// ═══════════════════════════════════════════
+async function loadMasterData() {
+  try {
+    [_hotels, _types, _providers] = await Promise.all([
+      api('GET','/hotels'), api('GET','/linen-types'), api('GET','/laundry-providers')
+    ]);
+    // Populate hotel filter
+    const hf = document.getElementById('hotel-filter');
+    hf.innerHTML = '<option value="">All Hotels</option>' + _hotels.map(h=>`<option value="${h.id}">${h.name}</option>`).join('');
+    // Scope to user's hotel
+    if(_user.hotel_id) { hf.value = _user.hotel_id; hf.disabled = _user.role !== 'platform_admin'; }
+    populateSelects();
+  } catch(e) { console.error('Master data load failed', e); }
+}
+
+function populateSelects() {
+  const hotelOpts = _hotels.map(h=>`<option value="${h.id}">${h.name}</option>`).join('');
+  const typeOpts = _types.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  ['enroll-hotel','disp-hotel','boq-hotel','au-hotel'].forEach(id=>{
+    const el=document.getElementById(id); if(el){ el.innerHTML=(el.id==='au-hotel'?'<option value="">— Platform level —</option>':'')+hotelOpts; }
+  });
+  ['enroll-type','inv-type-filter'].forEach(id=>{
+    const el=document.getElementById(id); if(el){ el.innerHTML=(id==='inv-type-filter'?'<option value="">All Types</option>':'')+typeOpts; }
+  });
+  const provOpts = _providers.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const dp=document.getElementById('disp-provider'); if(dp){ dp.innerHTML='<option value="">Select provider…</option>'+provOpts; }
+  // Scope enrolled hotel if needed
+  if(_user.hotel_id) {
+    ['enroll-hotel','disp-hotel','boq-hotel'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.value=_user.hotel_id; el.disabled=_user.role!=='platform_admin'&&_user.role!=='hotel_admin'; }});
+  }
+}
+
+function currentHotel() { return document.getElementById('hotel-filter').value || (_user.hotel_id || ''); }
+function onHotelChange() { const p=document.querySelector('.page.active'); if(p) { const id=p.id.replace('p-',''); nav(id); } }
+
+// ═══════════════════════════════════════════
+// TOAST + MODAL
+// ═══════════════════════════════════════════
+let _tt;
+function toast(msg, type='') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.background=type==='error'?'var(--red)':'var(--tx)';
+  el.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(s){ if(!s) return '—'; const d=new Date(s); return `${d.getDate()} ${months[d.getMonth()]} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function fmtDateShort(s){ if(!s) return '—'; const d=new Date(s); return `${d.getDate()} ${months[d.getMonth()]}`; }
+function statusPill(s){
+  const map={
+    in_house:'p-success',at_laundry:'p-warning',in_transit:'p-info',
+    missing:'p-danger',retired:'p-neutral',dispatched:'p-info',
+    acknowledged:'p-info',returned:'p-success',partially_returned:'p-danger',
+    overdue:'p-danger',draft:'p-neutral',under_review:'p-info',finalized:'p-success',
+    open:'p-neutral',in_progress:'p-info',resolved:'p-success',closed:'p-neutral',
+    active:'p-success',inactive:'p-neutral'
+  };
+  return `<span class="pill ${map[s]||'p-neutral'}">${s.replace(/_/g,' ')}</span>`;
+}
+function rolePill(r){
+  const map={platform_admin:'p-info',hotel_admin:'p-teal',hotel_manager:'p-neutral',staff:'p-neutral'};
+  return `<span class="pill ${map[r]||'p-neutral'}">${r.replace(/_/g,' ')}</span>`;
+}
+function priorityPill(p){
+  return `<span class="pill ${p==='critical'?'p-danger':p==='high'?'p-warning':p==='medium'?'p-info':'p-neutral'}">${p}</span>`;
+}
+function lcBar(washes, max, warning_pct){
+  const segs=8, used=Math.round((washes/max)*segs);
+  const threshold=Math.round((warning_pct/100)*segs);
+  let html='<div class="lc-bar">';
+  for(let i=0;i<segs;i++){
+    let cls='';
+    if(i<used){ cls=washes>=max?'over':used>threshold?'warn':'ok'; }
+    html+=`<div class="lc-seg ${cls}"></div>`;
+  }
+  return html+'</div>';
+}
+function paginationHTML(total, page, page_size, cb){
+  const pages=Math.ceil(total/page_size); if(pages<=1) return '';
+  let html='';
+  for(let i=1;i<=pages;i++){
+    html+=`<button class="btn btn-sm ${i===page?'btn-primary':''}" onclick="${cb}(${i})">${i}</button>`;
+  }
+  return html;
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+async function loadDashboard(){
+  const h=currentHotel();
+  try {
+    const d=await api('GET',`/reports/dashboard${h?'?hotel_id='+h:''}`);
+    document.getElementById('dash-stats').innerHTML=`
+      <div class="stat-card"><div class="stat-label">Total Enrolled</div><div class="stat-value">${d.totals.total.toLocaleString()}</div><div class="stat-meta">active linens</div></div>
+      <div class="stat-card"><div class="stat-label">At Laundry</div><div class="stat-value">${d.totals.at_laundry.toLocaleString()}</div><div class="stat-meta">${d.active_batches.length} active batches</div></div>
+      <div class="stat-card"><div class="stat-label">Missing</div><div class="stat-value" style="color:var(--red)">${d.totals.missing}</div><div class="stat-meta dn">${d.totals.missing>0?'Needs attention':''}</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Turnaround</div><div class="stat-value">${d.avg_turnaround_hours??'—'}h</div><div class="stat-meta up">this period</div></div>`;
+
+    document.getElementById('dash-batches').innerHTML = d.active_batches.length
+      ? d.active_batches.slice(0,6).map(b=>`<tr>
+          <td><code>${b.batch_code}</code></td>
+          <td>${b.total_items}</td>
+          <td>${b.laundry_name}</td>
+          <td>${statusPill(b.status)}</td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="4">No active batches</td></tr>';
+
+    const alerts=await api('GET',`/alerts?resolved=0${h?'&hotel_id='+h:''}`);
+    document.getElementById('dash-alert-count').textContent=`${alerts.length} items`;
+    document.getElementById('dash-alerts').innerHTML = alerts.slice(0,4).map(a=>`
+      <div class="alert-item ${a.severity==='critical'?'a-danger':a.severity==='warning'?'a-warning':'a-info'}">
+        <i class="ti ti-${a.type==='missing'?'alert-circle':a.type==='overdue'?'clock':a.type==='lifecycle'?'refresh':'file-invoice'}"></i>
+        <div><div class="at">${a.message}</div><div class="as">${fmtDateShort(a.created_at)}</div></div>
+      </div>`).join('') || '<div class="empty-state" style="padding:20px"><i class="ti ti-check"></i>No active alerts</div>';
+
+    document.getElementById('dash-stock').innerHTML = d.stock_by_type.map(s=>
+      `<tr><td>${s.type_name}</td><td>${s.total}</td><td>${s.in_house}</td></tr>`).join('');
+
+    const maxItems=Math.max(1,...d.laundry_utilization.map(l=>l.items));
+    document.getElementById('dash-laundry').innerHTML = d.laundry_utilization.length
+      ? d.laundry_utilization.map(l=>`
+        <div style="margin-bottom:11px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${l.name}</span><span style="color:var(--tx2)">${l.items} items</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(l.items/maxItems*100)}%"></div></div>
+        </div>`).join('')
+      : '<div style="color:var(--tx3);font-size:12px;text-align:center;padding:20px">No items at laundry</div>';
+
+    document.getElementById('dash-quickstats').innerHTML=`
+      <div class="inforow"><span class="k">Near lifecycle limit</span><span style="color:var(--amber);font-weight:600">${d.totals.lifecycle_warning}</span></div>
+      <div class="sep"></div>
+      <div class="inforow"><span class="k">Retired (total)</span><span>${d.totals.retired}</span></div>
+      <div class="inforow"><span class="k">Missing</span><span style="color:var(--red)">${d.totals.missing}</span></div>`;
+  } catch(e){ toast('Dashboard load error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════
+// ENROLLMENT
+// ═══════════════════════════════════════════
+async function loadEnrollPage(){
+  const h=currentHotel();
+  const today=new Date().toISOString().slice(0,10);
+  try {
+    const data=await api('GET',`/linens?hotel_id=${h}&page_size=10`);
+    const recent=data.data.slice(0,8);
+    document.getElementById('enroll-recent').innerHTML=recent.length
+      ? recent.map(l=>`<tr>
+          <td><code>${l.linen_code}</code></td>
+          <td>${l.type_name}</td>
+          <td><code>${l.rfid_tag}</code></td>
+          <td>${new Date(l.enrolled_at).toTimeString().slice(0,5)}</td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="4">No linens found</td></tr>';
+    document.getElementById('enroll-today-count').textContent='Total: '+data.total;
+  } catch{}
+
+  document.getElementById('enroll-limits').innerHTML=_types.map(t=>`
+    <tr><td>${t.name}</td><td>${t.max_washes}</td><td>${Math.round(t.max_washes*t.warning_pct/100)}</td>
+    <td>${t.action_at_limit==='retire'?'<span class="pill p-danger">Retire</span>':'<span class="pill p-warning">Flag</span>'}</td></tr>`).join('');
+}
+
+async function doEnroll(){
+  const rfid=document.getElementById('enroll-rfid').value.trim();
+  const type=document.getElementById('enroll-type').value;
+  const hotel=document.getElementById('enroll-hotel').value;
+  const brand=document.getElementById('enroll-brand').value;
+  const gsm=document.getElementById('enroll-gsm').value;
+  const date=document.getElementById('enroll-date').value;
+  if(!rfid||!type||!hotel){ toast('RFID tag, type, and hotel are required','error'); return; }
+  try {
+    const l=await api('POST','/linens',{rfid_tag:rfid,linen_type_id:type,hotel_id:hotel,brand,gsm,purchase_date:date});
+    toast(`Enrolled ${l.linen_code} (${l.type_name}) successfully`);
+    document.getElementById('enroll-rfid').value='';
+    loadEnrollPage();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════
+// DISPATCH
+// ═══════════════════════════════════════════
+async function loadDispatchPage(){
+  loadDispatchHistory();
+}
+
+async function loadDispatchHistory(page=1){
+  const h=currentHotel();
+  try {
+    const data=await api('GET',`/batches?hotel_id=${h}&page=${page}&page_size=20`);
+    document.getElementById('dispatch-history').innerHTML=data.data.length
+      ? data.data.map(b=>`<tr>
+          <td><code>${b.batch_code}</code></td>
+          <td>${fmtDateShort(b.dispatched_at)}</td>
+          <td>${b.total_items}</td>
+          <td>${b.laundry_name}</td>
+          <td>${statusPill(b.status)}</td>
+          <td><button class="btn btn-sm" onclick="viewBatch('${b.id}')"><i class="ti ti-eye"></i></button></td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="6">No batches found</td></tr>';
+  } catch(e){ console.error(e); }
+}
+
+async function addDispatchItem(){
+  const val=document.getElementById('disp-scan-input').value.trim();
+  if(!val) return;
+  try {
+    const res=await api('GET',`/linens/search?q=${encodeURIComponent(val)}`);
+    const l=res.linen;
+    if(!l){ toast('Linen not found','error'); return; }
+    if(l.status!=='in_house'){ toast(`${l.linen_code} is not in-house (${l.status})`,'error'); return; }
+    if(_dispatchItems.find(i=>i.id===l.id)){ toast('Already in batch','error'); return; }
+    _dispatchItems.push(l);
+    document.getElementById('disp-scan-input').value='';
+    renderDispatchTags();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+function renderDispatchTags(){
+  document.getElementById('disp-tags').innerHTML=_dispatchItems.map(l=>
+    `<span class="linen-tag"><i class="ti ti-tag" style="font-size:11px"></i>${l.linen_code} <span onclick="removeDispItem('${l.id}')" style="cursor:pointer;color:var(--tx3);font-size:13px">×</span></span>`).join('');
+  document.getElementById('disp-count').textContent=_dispatchItems.length;
+}
+function removeDispItem(id){ _dispatchItems=_dispatchItems.filter(i=>i.id!==id); renderDispatchTags(); }
+function clearDispatch(){ _dispatchItems=[]; renderDispatchTags(); }
+
+async function createBatch(){
+  if(!_dispatchItems.length){ toast('Add at least one item','error'); return; }
+  const hotel=document.getElementById('disp-hotel').value;
+  const provider=document.getElementById('disp-provider').value;
+  const sla=document.getElementById('disp-sla').value;
+  const notes=document.getElementById('disp-notes').value;
+  if(!hotel||!provider){ toast('Select hotel and provider','error'); return; }
+  try {
+    const b=await api('POST','/batches',{hotel_id:hotel,laundry_provider_id:provider,linen_ids:_dispatchItems.map(i=>i.id),sla_hours:parseInt(sla),notes});
+    toast(`Batch ${b.batch_code} dispatched — ${_dispatchItems.length} items`);
+    _lastBatchId=b.id;
+    _dispatchItems=[]; renderDispatchTags();
+    loadDispatchHistory();
+    document.getElementById('qr-batch-code').textContent=b.batch_code;
+    document.getElementById('qr-info').textContent=`${b.laundry_name} • ${_dispatchItems.length||''} items • ${fmtDateShort(b.dispatched_at)}`;
+  } catch(e){ toast(e.message,'error'); }
+}
+
+function openQR(){
+  if(!_lastBatchId){ toast('Create a batch first','error'); return; }
+  openModal('modal-qr');
+}
+
+// ═══════════════════════════════════════════
+// RETURNS
+// ═══════════════════════════════════════════
+async function loadReturnsPage(){
+  // Load active batches into dropdown
+  const h=currentHotel();
+  try {
+    const data=await api('GET',`/batches?hotel_id=${h}&page_size=50`);
+    const active=data.data.filter(b=>['dispatched','at_laundry','in_transit','overdue','partially_returned'].includes(b.status));
+    const sel=document.getElementById('ret-batch');
+    sel.innerHTML='<option value="">Select batch…</option>'+active.map(b=>`<option value="${b.id}" data-total="${b.total_items}" data-returned="${b.returned_items}">${b.batch_code} (${b.total_items} items)</option>`).join('');
+    sel.onchange=()=>{
+      const opt=sel.options[sel.selectedIndex];
+      const total=parseInt(opt.dataset.total||0);
+      const ret=parseInt(opt.dataset.returned||0);
+      document.getElementById('ret-expected').textContent=total||'—';
+      document.getElementById('ret-pending').textContent=total?(total-ret):'—';
+      _returnItems=[];renderReturnTags();
+    };
+    loadReturnHistory();
+  } catch{}
+}
+
+async function loadReturnHistory(){
+  const h=currentHotel();
+  try {
+    const data=await api('GET',`/batches?hotel_id=${h}&status=returned&page_size=10`);
+    document.getElementById('return-history').innerHTML=data.data.length
+      ? data.data.map(b=>`<tr>
+          <td><code>${b.batch_code}</code></td>
+          <td>${b.returned_items}</td>
+          <td>${b.total_items-b.returned_items>0?`<span class="pill p-danger">${b.total_items-b.returned_items}</span>`:'<span class="pill p-success">0</span>'}</td>
+          <td>${fmtDateShort(b.returned_at||b.dispatched_at)}</td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="4">No returns yet</td></tr>';
+  } catch{}
+}
+
+async function addReturnItem(){
+  const val=document.getElementById('ret-scan-input').value.trim();
+  if(!val) return;
+  try {
+    const res=await api('GET',`/linens/search?q=${encodeURIComponent(val)}`);
+    const l=res.linen;
+    if(!l){ toast('Linen not found','error'); return; }
+    if(_returnItems.find(i=>i.id===l.id)){ toast('Already scanned','error'); return; }
+    _returnItems.push(l);
+    document.getElementById('ret-scan-input').value='';
+    document.getElementById('ret-scanned').textContent=_returnItems.length;
+    const exp=parseInt(document.getElementById('ret-expected').textContent)||0;
+    document.getElementById('ret-pending').textContent=Math.max(0,exp-_returnItems.length);
+    renderReturnTags();
+  } catch(e){ toast(e.message,'error'); }
+}
+function renderReturnTags(){
+  document.getElementById('ret-tags').innerHTML=_returnItems.map(l=>
+    `<span class="linen-tag"><i class="ti ti-tag" style="font-size:11px"></i>${l.linen_code}</span>`).join('');
+}
+
+async function submitReturn(){
+  const batchId=document.getElementById('ret-batch').value;
+  const retType=document.getElementById('ret-type').value;
+  if(!batchId){ toast('Select a batch','error'); return; }
+  if(!_returnItems.length){ toast('Scan at least one item','error'); return; }
+  try {
+    const res=await api('POST',`/batches/${batchId}/return`,{
+      returned_items:_returnItems.map(l=>({linen_id:l.id,return_status:retType}))
+    });
+    toast(`Return processed — ${_returnItems.length} items. Batch: ${res.status.replace(/_/g,' ')}`);
+    _returnItems=[]; renderReturnTags();
+    document.getElementById('ret-scanned').textContent='0';
+    loadReturnsPage();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════
+// BATCHES
+// ═══════════════════════════════════════════
+async function loadBatches(page=1){
+  const h=currentHotel();
+  const status=document.getElementById('batch-status-filter').value;
+  const search=document.getElementById('batch-search').value;
+  try {
+    let url=`/batches?page=${page}&page_size=25`;
+    if(h) url+=`&hotel_id=${h}`;
+    if(status) url+=`&status=${status}`;
+    const data=await api('GET',url);
+    let rows=data.data;
+    if(search) rows=rows.filter(b=>b.batch_code.toLowerCase().includes(search.toLowerCase()));
+    document.getElementById('batches-table').innerHTML=rows.length
+      ? rows.map(b=>{
+          const missing=b.total_items-b.returned_items;
+          return `<tr>
+            <td><code>${b.batch_code}</code></td>
+            <td>${b.hotel_name}</td>
+            <td>${b.laundry_name}</td>
+            <td>${fmtDate(b.dispatched_at)}</td>
+            <td>${fmtDate(b.expected_return_at)}</td>
+            <td>${b.total_items}</td>
+            <td>${b.returned_items||0}</td>
+            <td>${b.status==='returned'?'<span class="pill p-success">0</span>':missing>0?`<span class="pill p-danger">${missing}</span>`:'—'}</td>
+            <td>${statusPill(b.status)}</td>
+            <td><button class="btn btn-sm" onclick="viewBatch('${b.id}')">View</button></td>
+          </tr>`;}).join('')
+      : '<tr class="loading-row"><td colspan="10">No batches found</td></tr>';
+    document.getElementById('batches-pagination').innerHTML=paginationHTML(data.total,page,25,'loadBatches');
+  } catch(e){ console.error(e); }
+}
+
+async function viewBatch(id){
+  try {
+    const b=await api('GET',`/batches/${b.id||id}`);
+    document.getElementById('batch-detail-title').textContent=`Batch ${b.batch_code}`;
+    document.getElementById('batch-detail-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:13px;padding:11px;background:var(--bg2);border-radius:var(--r8)">
+        <div class="inforow"><span class="k">Status</span>${statusPill(b.status)}</div>
+        <div class="inforow"><span class="k">Hotel</span><span>${b.hotel_name}</span></div>
+        <div class="inforow"><span class="k">Laundry</span><span>${b.laundry_name}</span></div>
+        <div class="inforow"><span class="k">Dispatched</span><span>${fmtDate(b.dispatched_at)}</span></div>
+        <div class="inforow"><span class="k">Expected</span><span>${fmtDate(b.expected_return_at)}</span></div>
+        <div class="inforow"><span class="k">QR Ack</span><span>${b.qr_acknowledged_at?'✓ '+fmtDate(b.qr_acknowledged_at):'Pending'}</span></div>
+        <div class="inforow"><span class="k">Total Items</span><span>${b.total_items}</span></div>
+        <div class="inforow"><span class="k">Returned</span><span>${b.returned_items||0}</span></div>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Breakdown by Type</div>
+      <table><thead><tr><th>Type</th><th>Dispatched</th><th>Returned</th></tr></thead>
+      <tbody>${b.breakdown.map(r=>`<tr><td>${r.type_name}</td><td>${r.count}</td><td>${r.returned||0}</td></tr>`).join('')}</tbody></table>`;
+    openModal('modal-batch-detail');
+  } catch(e){ toast('Failed to load batch','error'); }
+}
+
+// Fix viewBatch
+window.viewBatch=async function(id){
+  try {
+    const b=await api('GET',`/batches/${id}`);
+    document.getElementById('batch-detail-title').textContent=`Batch ${b.batch_code}`;
+    document.getElementById('batch-detail-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:13px;padding:11px;background:var(--bg2);border-radius:var(--r8)">
+        <div class="inforow"><span class="k">Status</span>${statusPill(b.status)}</div>
+        <div class="inforow"><span class="k">Hotel</span><span>${b.hotel_name}</span></div>
+        <div class="inforow"><span class="k">Laundry</span><span>${b.laundry_name}</span></div>
+        <div class="inforow"><span class="k">Dispatched</span><span>${fmtDate(b.dispatched_at)}</span></div>
+        <div class="inforow"><span class="k">Expected</span><span>${fmtDate(b.expected_return_at)}</span></div>
+        <div class="inforow"><span class="k">QR Ack</span><span>${b.qr_acknowledged_at?'✓ '+fmtDate(b.qr_acknowledged_at):'Pending'}</span></div>
+        <div class="inforow"><span class="k">Total Items</span><span>${b.total_items}</span></div>
+        <div class="inforow"><span class="k">Returned</span><span>${b.returned_items||0}</span></div>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Breakdown by Type</div>
+      <table><thead><tr><th>Type</th><th>Dispatched</th><th>Returned</th></tr></thead>
+      <tbody>${b.breakdown.map(r=>`<tr><td>${r.type_name}</td><td>${r.count}</td><td>${r.returned||0}</td></tr>`).join('')}</tbody></table>`;
+    openModal('modal-batch-detail');
+  } catch(e){ toast('Failed to load batch','error'); }
+};
+
+// ═══════════════════════════════════════════
+// INVENTORY
+// ═══════════════════════════════════════════
+async function loadInventory(page=1){
+  const h=currentHotel();
+  const type=document.getElementById('inv-type-filter').value;
+  const status=document.getElementById('inv-status-filter').value;
+  const search=document.getElementById('inv-search').value;
+  let url=`/linens?page=${page}&page_size=30`;
+  if(h) url+=`&hotel_id=${h}`;
+  if(type) url+=`&linen_type_id=${type}`;
+  if(status) url+=`&status=${status}`;
+  if(search) url+=`&search=${encodeURIComponent(search)}`;
+  try {
+    const data=await api('GET',url);
+    // Summary counts
+    const summary=await api('GET',`/reports/dashboard${h?'?hotel_id='+h:''}`);
+    document.getElementById('inv-inhouse').textContent=summary.totals.total-summary.totals.at_laundry-summary.totals.missing;
+    document.getElementById('inv-atlaundry').textContent=summary.totals.at_laundry;
+    document.getElementById('inv-nearlimit').textContent=summary.totals.lifecycle_warning;
+    document.getElementById('inv-retired').textContent=summary.totals.retired;
+
+    document.getElementById('inventory-table').innerHTML=data.data.length
+      ? data.data.map(l=>`<tr>
+          <td><code>${l.linen_code}</code></td>
+          <td><code style="font-size:10px">${l.rfid_tag}</code></td>
+          <td>${l.type_name}</td>
+          <td>${l.wash_count}</td>
+          <td>
+            <div style="font-size:10px;color:${l.wash_count>=l.max_washes?'var(--red)':l.wash_count>=l.max_washes*l.warning_pct/100?'var(--amber)':'var(--tx2)'};margin-bottom:2px">${l.wash_count}/${l.max_washes}</div>
+            ${lcBar(l.wash_count,l.max_washes,l.warning_pct)}
+          </td>
+          <td>${l.hotel_name}</td>
+          <td>${statusPill(l.status)}</td>
+          <td><button class="btn btn-sm" onclick="viewLinenHistory('${l.id}','${l.linen_code}')">History</button></td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="8">No linens found</td></tr>';
+    document.getElementById('inv-pagination').innerHTML=paginationHTML(data.total,page,30,'loadInventory');
+  } catch(e){ console.error(e); }
+}
+
+async function viewLinenHistory(id, code){
+  try {
+    const [linen, history]=await Promise.all([api('GET',`/linens/${id}`), api('GET',`/linens/${id}/history`)]);
+    document.getElementById('linen-hist-title').textContent=`History — ${code}`;
+    document.getElementById('linen-hist-body').innerHTML=`
+      <div style="padding:11px;background:var(--bg2);border-radius:var(--r8);margin-bottom:13px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">
+          <div class="inforow"><span class="k">RFID</span><code>${linen.rfid_tag}</code></div>
+          <div class="inforow"><span class="k">Type</span><span>${linen.type_name}</span></div>
+          <div class="inforow"><span class="k">Total Washes</span><span style="font-weight:600">${linen.wash_count}</span></div>
+          <div class="inforow"><span class="k">Max Washes</span><span>${linen.max_washes}</span></div>
+          <div class="inforow"><span class="k">Hotel</span><span>${linen.hotel_name}</span></div>
+          <div class="inforow"><span class="k">Status</span>${statusPill(linen.status)}</div>
+        </div>
+      </div>
+      ${history.length
+        ? history.map(h=>`
+          <div class="timeline-item">
+            <div class="tl-dot ${h.returned_at?'done':'info'}"></div>
+            <div>
+              <div class="tl-title">${h.returned_at?'Returned':'Dispatched'} · ${h.batch_code} · ${h.laundry_name}</div>
+              <div class="tl-meta">${fmtDate(h.returned_at||h.dispatched_at)}${h.return_status?' · '+h.return_status:''}</div>
+            </div>
+          </div>`).join('')
+        : '<div class="empty-state"><i class="ti ti-history"></i>No wash history yet</div>'}
+      <div class="timeline-item">
+        <div class="tl-dot done"></div>
+        <div><div class="tl-title">Enrolled</div><div class="tl-meta">${fmtDate(linen.enrolled_at)}</div></div>
+      </div>`;
+    openModal('modal-linen-history');
+  } catch(e){ toast('Failed to load history','error'); }
+}
+
+// ═══════════════════════════════════════════
+// BOQ
+// ═══════════════════════════════════════════
+async function loadBOQPage(){
+  const h=currentHotel();
+  try {
+    const data=await api('GET',`/boq${h?'?hotel_id='+h:''}`);
+    document.getElementById('boq-history').innerHTML=data.length
+      ? data.map(b=>`<tr>
+          <td>${months[b.month-1]} ${b.year}</td>
+          <td>${b.hotel_name}</td>
+          <td>₹${b.total_amount.toLocaleString('en-IN')}</td>
+          <td>${statusPill(b.status)}</td>
+          <td><button class="btn btn-sm" onclick="loadBOQDetail('${b.id}')">View</button></td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="5">No BOQs yet</td></tr>';
+  } catch{}
+  if(_user.hotel_id) document.getElementById('boq-hotel').value=_user.hotel_id;
+}
+
+async function generateBOQ(){
+  const hotel=document.getElementById('boq-hotel').value;
+  const month=parseInt(document.getElementById('boq-month').value);
+  const year=parseInt(document.getElementById('boq-year').value);
+  if(!hotel){ toast('Select a hotel','error'); return; }
+  try {
+    await api('POST','/boq/generate',{hotel_id:hotel,month,year});
+    toast(`BOQ for ${months[month-1]} ${year} generated`);
+    loadBOQPage();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+async function loadBOQDetail(id){
+  try {
+    const b=await api('GET',`/boq/${id}`);
+    document.getElementById('boq-detail-title').textContent=`${months[b.month-1]} ${b.year} — ${b.hotel_name}`;
+    const wfSteps=['draft','under_review','finalized'];
+    const curStep=wfSteps.indexOf(b.status);
+    document.getElementById('boq-detail-body').innerHTML=`
+      <div style="margin-bottom:13px">
+        ${['Draft','Under Review','Finalized'].map((s,i)=>`
+          <div class="boq-step" style="${i===curStep?'border-color:var(--blue);background:var(--blue-bg)':''}">
+            <div class="step-num ${i<curStep?'step-done':i===curStep?'step-active':'step-pending'}">
+              ${i<curStep?'<i class="ti ti-check" style="font-size:10px"></i>':i+1}
+            </div>
+            <div style="font-size:12.5px;font-weight:${i===curStep?600:400};color:${i===curStep?'var(--blue)':'inherit'}">${s}</div>
+            ${b.finalized_at&&s==='Finalized'?`<span style="font-size:10px;color:var(--tx3);margin-left:auto">${fmtDateShort(b.finalized_at)}</span>`:''}
+          </div>`).join('')}
+      </div>
+      <table>
+        <thead><tr><th>Type</th><th>Washes</th><th>Rewashes</th><th>Billable</th><th>Rate</th><th>Amount</th></tr></thead>
+        <tbody>
+          ${b.items.map(i=>`<tr>
+            <td>${i.type_name}</td><td>${i.wash_count}</td><td>${i.rewash_count}</td>
+            <td>${i.billable_count}</td><td>₹${i.rate}</td>
+            <td style="font-weight:600">₹${i.amount.toLocaleString('en-IN')}</td>
+          </tr>`).join('')}
+          <tr style="font-weight:700;border-top:.5px solid var(--bd2)">
+            <td colspan="5" style="text-align:right">Total</td>
+            <td>₹${b.total_amount.toLocaleString('en-IN')}</td>
+          </tr>
+        </tbody>
+      </table>
+      ${b.status!=='finalized'?`
+      <div style="display:flex;gap:8px;margin-top:13px">
+        ${b.status==='draft'?`<button class="btn btn-sm" onclick="updateBOQ('${b.id}','under_review')"><i class="ti ti-arrow-right"></i> Move to Review</button>`:''}
+        ${b.status==='under_review'?`<button class="btn btn-sm btn-primary" onclick="updateBOQ('${b.id}','finalized')"><i class="ti ti-check"></i> Approve &amp; Finalize</button>`:''}
+      </div>`:''}`
+    ;
+  } catch(e){ toast('Failed to load BOQ','error'); }
+}
+
+async function updateBOQ(id,status){
+  try {
+    await api('PUT',`/boq/${id}`,{status});
+    toast(`BOQ ${status.replace(/_/g,' ')}`);
+    loadBOQDetail(id); loadBOQPage();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════
+async function loadReports(){
+  const h=currentHotel();
+  try {
+    const [stock,turnaround,providers]=await Promise.all([
+      api('GET',`/reports/stock${h?'?hotel_id='+h:''}`),
+      api('GET',`/reports/turnaround${h?'?hotel_id='+h:''}`),
+      api('GET','/laundry-providers')
+    ]);
+    document.getElementById('rpt-stock-table').innerHTML=stock.length
+      ? stock.map(r=>`<tr><td>${r.hotel_name}</td><td>${r.type_name}</td><td>${r.total}</td><td>${r.in_house}</td><td>${r.at_laundry}</td><td>${r.retired}</td></tr>`).join('')
+      : '<tr class="loading-row"><td colspan="6">No data</td></tr>';
+
+    document.getElementById('rpt-laundry-table').innerHTML=providers.length
+      ? providers.map(p=>`<tr><td>${p.name}</td><td>${p.active_batches||0}</td><td>${p.current_items||0}</td><td>${statusPill(p.status)}</td></tr>`).join('')
+      : '<tr class="loading-row"><td colspan="4">No providers</td></tr>';
+
+    document.getElementById('rpt-turnaround-table').innerHTML=turnaround.length
+      ? turnaround.map(r=>`<tr>
+          <td>${r.provider}</td><td>${r.total_batches}</td>
+          <td>${r.avg_hours??'—'}h</td>
+          <td>${r.on_time_pct!=null?r.on_time_pct+'%':'—'}</td>
+          <td>${r.overdue>0?`<span class="pill p-danger">${r.overdue}</span>`:'<span class="pill p-success">0</span>'}</td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="5">No data</td></tr>';
+  } catch(e){ console.error(e); }
+}
+
+// ═══════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════
+async function loadAlertBadge(){
+  try {
+    const h=currentHotel();
+    const alerts=await api('GET',`/alerts?resolved=0${h?'&hotel_id='+h:''}`);
+    document.getElementById('alert-badge').textContent=alerts.length||'0';
+  } catch{}
+}
+
+async function loadAlerts(){
+  const h=currentHotel();
+  try {
+    const alerts=await api('GET',`/alerts?resolved=0${h?'&hotel_id='+h:''}`);
+    document.getElementById('alerts-count').textContent=`${alerts.length} active`;
+    document.getElementById('alerts-list').innerHTML=alerts.length
+      ? alerts.map(a=>`
+          <div class="alert-item ${a.severity==='critical'?'a-danger':a.severity==='warning'?'a-warning':'a-info'}">
+            <i class="ti ti-${a.type==='missing'?'alert-circle':a.type==='overdue'?'clock':'refresh'}"></i>
+            <div style="flex:1">
+              <div class="at">${a.message}</div>
+              <div class="as">${fmtDate(a.created_at)}</div>
+            </div>
+            <button class="btn btn-sm" onclick="resolveAlert('${a.id}',this)" style="flex-shrink:0">Resolve</button>
+          </div>`).join('')
+      : '<div class="empty-state"><i class="ti ti-check"></i>No active alerts</div>';
+  } catch{}
+}
+
+async function resolveAlert(id, btn){
+  btn.disabled=true; btn.textContent='…';
+  try {
+    await api('POST',`/alerts/${id}/resolve`);
+    toast('Alert resolved'); loadAlerts(); loadAlertBadge();
+  } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.textContent='Resolve'; }
+}
+
+// ═══════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════
+async function doSearch(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q){ toast('Enter a search query','error'); return; }
+  try {
+    const res=await api('GET',`/linens/search?q=${encodeURIComponent(q)}`);
+    const l=res.linen; const hist=res.history;
+    document.getElementById('search-result').innerHTML=`
+      <div style="background:var(--bg2);border-radius:var(--r12);padding:18px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:8px">
+          <i class="ti ti-tag" style="color:var(--blue);font-size:16px"></i>${l.linen_code} <span style="font-family:monospace;font-weight:400;font-size:12px">${l.rfid_tag}</span> ${statusPill(l.status)}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:14px">
+          <div class="inforow"><span class="k">Type</span><span>${l.type_name}</span></div>
+          <div class="inforow"><span class="k">Hotel</span><span>${l.hotel_name}</span></div>
+          <div class="inforow"><span class="k">Total Washes</span><span style="font-weight:700">${l.wash_count}</span></div>
+          <div class="inforow"><span class="k">Max Washes</span><span>${l.max_washes}</span></div>
+          <div class="inforow"><span class="k">Enrolled</span><span>${fmtDateShort(l.enrolled_at)}</span></div>
+        </div>
+        <div style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px">Wash History (${hist.length} events)</div>
+        ${hist.map(h=>`
+          <div class="timeline-item">
+            <div class="tl-dot ${h.returned_at?'done':'info'}"></div>
+            <div><div class="tl-title">${h.returned_at?'Returned':'Dispatched'} · ${h.batch_code} · ${h.laundry_name}</div>
+            <div class="tl-meta">${fmtDate(h.returned_at||h.dispatched_at)}</div></div>
+          </div>`).join('')}
+        ${!hist.length?'<div class="tl-meta" style="padding:8px 0 0">No wash history yet</div>':''}
+        <div class="timeline-item">
+          <div class="tl-dot done"></div>
+          <div><div class="tl-title">Enrolled</div><div class="tl-meta">${fmtDate(l.enrolled_at)}</div></div>
+        </div>
+      </div>`;
+  } catch(e){ document.getElementById('search-result').innerHTML=`<div class="empty-state"><i class="ti ti-search"></i>${e.message}</div>`; }
+}
+
+function quickSearch(){
+  const q=document.getElementById('quick-scan-input').value.trim();
+  if(!q) return;
+  closeModal('modal-scan');
+  nav('search');
+  document.getElementById('search-input').value=q;
+  doSearch();
+}
+
+// ═══════════════════════════════════════════
+// MASTER DATA
+// ═══════════════════════════════════════════
+async function loadLinenTypes(){
+  try {
+    const types=await api('GET','/linen-types');
+    document.getElementById('types-table').innerHTML=types.map(t=>`<tr>
+      <td>${t.name}</td><td>${t.category}</td><td>${t.max_washes}</td>
+      <td>${Math.round(t.max_washes*t.warning_pct/100)} (${t.warning_pct}%)</td>
+      <td>${t.action_at_limit==='retire'?'<span class="pill p-danger">Retire</span>':'<span class="pill p-warning">Flag</span>'}</td>
+      <td>₹${t.billing_rate}</td>
+      <td><button class="btn btn-sm btn-icon"><i class="ti ti-edit"></i></button></td>
+    </tr>`).join('');
+  } catch{}
+}
+
+async function loadProviders(){
+  try {
+    const providers=await api('GET','/laundry-providers');
+    document.getElementById('providers-table').innerHTML=providers.map(p=>`<tr>
+      <td>${p.name}</td><td>${p.contact||'—'}</td><td>${p.sla_hours}</td>
+      <td>${p.current_items||0}</td><td>${statusPill(p.status)}</td>
+    </tr>`).join('');
+  } catch{}
+}
+
+async function loadHotels(){
+  try {
+    const hotels=await api('GET','/hotels');
+    document.getElementById('hotels-table').innerHTML=hotels.map(h=>`<tr>
+      <td>${h.name}</td><td>${h.city}</td><td>${h.rooms}</td>
+      <td>${h.enrolled_linens||0}</td><td>${statusPill(h.status)}</td>
+    </tr>`).join('');
+  } catch{}
+}
+
+async function saveLinenType(){
+  try {
+    await api('POST','/linen-types',{
+      name:document.getElementById('at-name').value,
+      category:document.getElementById('at-cat').value,
+      max_washes:parseInt(document.getElementById('at-max').value),
+      warning_pct:parseInt(document.getElementById('at-warn').value),
+      billing_rate:parseFloat(document.getElementById('at-rate').value),
+      action_at_limit:document.getElementById('at-action').value
+    });
+    toast('Linen type saved'); closeModal('modal-add-type'); loadLinenTypes(); loadMasterData();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+async function saveProvider(){
+  try {
+    await api('POST','/laundry-providers',{
+      name:document.getElementById('ap-name').value,
+      contact:document.getElementById('ap-contact').value,
+      sla_hours:parseInt(document.getElementById('ap-sla').value)
+    });
+    toast('Provider saved'); closeModal('modal-add-provider'); loadProviders(); loadMasterData();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+async function saveHotel(){
+  try {
+    await api('POST','/hotels',{
+      name:document.getElementById('ah-name').value,
+      city:document.getElementById('ah-city').value,
+      rooms:parseInt(document.getElementById('ah-rooms').value)
+    });
+    toast('Hotel saved'); closeModal('modal-add-hotel'); loadHotels(); loadMasterData();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════
+// USERS
+// ═══════════════════════════════════════════
+async function loadUsers(){
+  try {
+    const users=await api('GET','/users');
+    document.getElementById('users-table').innerHTML=users.map(u=>`<tr>
+      <td>${u.name}</td><td>${u.email}</td><td>${rolePill(u.role)}</td>
+      <td>${u.hotel_name||'— All —'}</td>
+      <td>${u.last_login?fmtDateShort(u.last_login):'Never'}</td>
+      <td>${statusPill(u.status)}</td>
+      <td><button class="btn btn-sm btn-icon"><i class="ti ti-edit"></i></button></td>
+    </tr>`).join('');
+  } catch{}
+}
+
+async function saveUser(){
+  try {
+    await api('POST','/users',{
+      name:document.getElementById('au-name').value,
+      email:document.getElementById('au-email').value,
+      password:document.getElementById('au-pass').value,
+      role:document.getElementById('au-role').value,
+      hotel_id:document.getElementById('au-hotel').value||null
+    });
+    toast('User created'); closeModal('modal-add-user'); loadUsers();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════
+// SUPPORT
+// ═══════════════════════════════════════════
+async function loadSupport(){
+  const h=currentHotel();
+  try {
+    const tickets=await api('GET',`/support${h?'?hotel_id='+h:''}`);
+    document.getElementById('tickets-table').innerHTML=tickets.length
+      ? tickets.map(t=>`<tr>
+          <td><code>${t.ticket_code}</code></td>
+          <td>${t.issue_type}</td>
+          <td>${priorityPill(t.priority)}</td>
+          <td>${statusPill(t.status)}</td>
+          <td>${fmtDateShort(t.created_at)}</td>
+        </tr>`).join('')
+      : '<tr class="loading-row"><td colspan="5">No tickets</td></tr>';
+  } catch{}
+}
+
+async function submitTicket(){
+  const type=document.getElementById('ticket-type').value;
+  const priority=document.getElementById('ticket-priority').value;
+  const desc=document.getElementById('ticket-desc').value;
+  if(!desc){ toast('Description is required','error'); return; }
+  try {
+    const t=await api('POST','/support',{issue_type:type,priority,description:desc});
+    toast(`Ticket ${t.ticket_code} raised`);
+    document.getElementById('ticket-desc').value='';
+    loadSupport();
+  } catch(e){ toast(e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+if(_token) { showApp(); } else { document.getElementById('login-screen').style.display='flex'; }
+</script>
+</body>
+</html>
